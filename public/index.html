@@ -3,19 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TikTok Downloader</title>
+  <title>미디어 다운로더</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
     body { background: #0f0f12; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
     .container { width: 100%; max-width: 480px; background: #18181c; border-radius: 24px; padding: 32px 24px; border: 1px solid #2a2a30; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-    .header { text-align: center; margin-bottom: 28px; }
-    .header i { font-size: 40px; color: #ff0050; margin-bottom: 12px; }
-    .header h1 { font-size: 22px; font-weight: 700; }
+    
+    .header { text-align: center; margin-bottom: 24px; }
+    .header .icon-group { font-size: 36px; margin-bottom: 12px; display: flex; justify-content: center; gap: 16px; }
+    .header .icon-group .fa-tiktok { color: #ff0050; }
+    .header .icon-group .fa-instagram { color: #e1306c; }
+    .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .header p { font-size: 13px; color: #a0a0ab; line-height: 1.5; word-break: keep-all; }
+
+    .tab-group { display: flex; background: #222228; padding: 4px; border-radius: 14px; margin-bottom: 20px; border: 1px solid #33333d; }
+    .tab-btn { flex: 1; padding: 10px; background: transparent; border: none; color: #80808a; font-size: 14px; font-weight: 600; border-radius: 10px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .tab-btn.active { background: #2d2d35; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .tab-btn.active.tiktok-tab { color: #00f2fe; }
+    .tab-btn.active.insta-tab { color: #e1306c; }
+
     .input-group { display: flex; gap: 8px; margin-bottom: 24px; background: #222228; padding: 6px; border-radius: 16px; border: 1px solid #33333d; }
     input { flex: 1; background: transparent; border: none; padding: 12px 16px; color: #fff; font-size: 14px; outline: none; }
-    button { background: linear-gradient(45deg, #ff0050, #00f2fe); border: none; padding: 12px 20px; border-radius: 12px; color: #fff; font-weight: 600; cursor: pointer; transition: 0.2s; }
-    button:hover { opacity: 0.9; transform: scale(0.98); }
+    button.submit-btn { background: linear-gradient(45deg, #ff0050, #00f2fe); border: none; padding: 12px 20px; border-radius: 12px; color: #fff; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    button.submit-btn:hover { opacity: 0.9; transform: scale(0.98); }
     
     .card { display: none; background: #222228; border-radius: 16px; overflow: hidden; border: 1px solid #33333d; }
     .card-img { width: 100%; height: 240px; object-fit: cover; }
@@ -24,7 +35,10 @@
     .title { font-size: 15px; font-weight: 600; line-height: 1.4; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .stats { display: flex; gap: 16px; font-size: 13px; color: #80808a; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #2d2d35; }
     .stats div { display: flex; align-items: center; gap: 6px; }
-    .download-btn { display: block; width: 100%; text-align: center; background: #ff0050; color: #fff; text-decoration: none; padding: 12px; border-radius: 10px; font-weight: 600; }
+    
+    /* 실제 클릭하는 버튼 디자인 */
+    .download-link-btn { display: block; width: 100%; text-align: center; background: #ff0050; color: #fff; text-decoration: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; }
+    .download-link-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
     
     .loading { display: none; text-align: center; padding: 20px; color: #80808a; }
   </style>
@@ -32,13 +46,26 @@
 <body>
   <div class="container">
     <div class="header">
-      <i class="fa-brands fa-tiktok"></i>
-      <h1>TikTok Video Downloader</h1>
+      <div class="icon-group">
+        <i class="fa-brands fa-tiktok"></i>
+        <i class="fa-brands fa-instagram"></i>
+      </div>
+      <h1>고화질 동영상 다운로더</h1>
+      <p>틱톡 영상과 인스타그램 릴스를 워터마크 없이 간편하게 고화질로 다운로드하세요.</p>
+    </div>
+
+    <div class="tab-group">
+      <button class="tab-btn active tiktok-tab" id="tiktokTabBtn" onclick="switchTab('tiktok')">
+        <i class="fa-brands fa-tiktok"></i> 틱톡 영상
+      </button>
+      <button class="tab-btn insta-tab" id="instaTabBtn" onclick="switchTab('insta')">
+        <i class="fa-brands fa-instagram"></i> 인스타 릴스
+      </button>
     </div>
     
     <div class="input-group">
       <input type="text" id="urlInput" placeholder="틱톡 영상 링크를 붙여넣으세요">
-      <button onclick="fetchVideo()">추출</button>
+      <button class="submit-btn" onclick="fetchVideo()">추출</button>
     </div>
 
     <div class="loading" id="loading"><i class="fa-solid fa-spinner fa-spin"></i> 영상을 불러오는 중...</div>
@@ -52,24 +79,53 @@
           <div><i class="fa-solid fa-play"></i> <span id="views">0</span></div>
           <div><i class="fa-solid fa-heart"></i> <span id="likes">0</span></div>
         </div>
-        <a id="downloadLink" class="download-btn" href="" target="_blank" rel="noreferrer"><i class="fa-solid fa-download"></i> 워터마크 없이 다운로드</a>
+        <!-- 실제 클릭하는 버튼 -->
+        <button id="downloadBtn" class="download-link-btn" onclick="forceDownload()"><i class="fa-solid fa-download"></i> 워터마크 없이 다운로드</button>
       </div>
     </div>
   </div>
 
   <script>
+    let currentTab = 'tiktok';
+    let currentVideoUrl = ''; // 현재 추출된 원본 영상 링크 저장
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const tiktokBtn = document.getElementById('tiktokTabBtn');
+      const instaBtn = document.getElementById('instaTabBtn');
+      const input = document.getElementById('urlInput');
+      const resultCard = document.getElementById('resultCard');
+
+      resultCard.style.display = 'none';
+
+      if (tab === 'tiktok') {
+        tiktokBtn.classList.add('active');
+        instaBtn.classList.remove('active');
+        input.placeholder = '틱톡 영상 링크를 붙여넣으세요';
+      } else {
+        instaBtn.classList.add('active');
+        tiktokBtn.classList.remove('active');
+        input.placeholder = '인스타그램 릴스 링크를 붙여넣으세요';
+      }
+    }
+
     async function fetchVideo() {
       const urlInput = document.getElementById('urlInput');
       const url = urlInput.value.trim();
       if(!url) return alert('링크를 입력하세요!');
+
+      if (currentTab === 'insta') {
+        return alert('인스타그램 릴스 다운로드용 API 연결 설정이 추가로 필요합니다.');
+      }
 
       const loading = document.getElementById('loading');
       const resultCard = document.getElementById('resultCard');
 
       loading.style.display = 'block';
       resultCard.style.display = 'none';
+      currentVideoUrl = ''; // 기존 URL 초기화
 
-      // 1차 시도: Tikwm 공용 우회
+      // 틱톡 1차 시도
       try {
         const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
         const result = await res.json();
@@ -87,7 +143,7 @@
         }
       } catch (e) {}
 
-      // 2차 시도: Lovelytik 백업 API
+      // 틱톡 2차 시도
       try {
         const res2 = await fetch(`https://api.lovelytik.com/api/free/tiktok?url=${encodeURIComponent(url)}`);
         const result2 = await res2.json();
@@ -106,7 +162,7 @@
       } catch (e) {}
 
       loading.style.display = 'none';
-      alert('영상 추출에 실패했습니다. 틱톡 링크 주소가 올바른지 확인해주세요.');
+      alert('영상 추출에 실패했습니다. 링크 주소가 올바른지 확인해주세요.');
     }
 
     function renderData(data) {
@@ -115,8 +171,54 @@
       document.getElementById('title').innerText = data.title;
       document.getElementById('views').innerText = Number(data.views).toLocaleString();
       document.getElementById('likes').innerText = Number(data.likes).toLocaleString();
-      document.getElementById('downloadLink').href = data.videoUrl;
+      
+      // 원본 URL 저장 및 다운로드 버튼 상태 초기화
+      currentVideoUrl = data.videoUrl;
+      const downloadBtn = document.getElementById('downloadBtn');
+      downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i> 워터마크 없이 다운로드';
+      downloadBtn.disabled = false;
+      
       document.getElementById('resultCard').style.display = 'block';
+    }
+
+    // 모바일 무조건 다운로드 우회 로직
+    async function forceDownload() {
+      if (!currentVideoUrl) return;
+
+      const downloadBtn = document.getElementById('downloadBtn');
+      const originalText = downloadBtn.innerHTML;
+      downloadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 다운로드 준비 중...';
+      downloadBtn.disabled = true;
+
+      try {
+        // CORS 우회 프록시를 통해 영상 데이터를 Blob으로 직접 가져옴
+        const corsUrl = `https://corsproxy.io/?${encodeURIComponent(currentVideoUrl)}`;
+        const response = await fetch(corsUrl);
+        const blob = await response.blob();
+        
+        // 브라우저 내부에서만 유효한 임시 URL 생성
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        // 보이지 않는 가짜 <a> 태그 생성 및 클릭
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = blobUrl;
+        a.download = `tiktok_video_${Date.now()}.mp4`; // 다운로드 파일명 지정
+        document.body.appendChild(a);
+        a.click();
+        
+        // 메모리 해제
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+
+      } catch (err) {
+        console.error(err);
+        alert('모바일 직접 다운로드에 실패했습니다. 영상이 재생되면 화면을 길게 눌러 다운로드해 주세요.');
+      }
+
+      // 버튼 상태 복구
+      downloadBtn.innerHTML = originalText;
+      downloadBtn.disabled = false;
     }
   </script>
 </body>
