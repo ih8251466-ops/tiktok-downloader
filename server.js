@@ -1,37 +1,32 @@
 const express = require('express');
 const axios = require('axios');
-const cors = require('cors');
-
 const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
+
 app.use(express.static('public'));
 
-app.post('/api/download', async (req, res) => {
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ error: '틱톡 링크를 입력해 주세요.' });
+app.get('/api/download', async (req, res) => {
+  const videoUrl = req.query.url;
+  if (!videoUrl) return res.status(400).json({ error: 'URL이 필요합니다.' });
 
-    try {
-        const response = await axios.post('https://www.tikwm.com/api/', {
-            url: url,
-            hd: 1
-        });
+  try {
+    const apiRes = await axios.get(`https://tikwm.com/api/?url=${encodeURIComponent(videoUrl)}`);
+    const data = apiRes.data.data;
 
-        const data = response.data;
-        if (data.code === 0) {
-            res.json({
-                success: true,
-                title: data.data.title || '틱톡 영상',
-                videoUrl: data.data.play,
-                author: data.data.author.nickname
-            });
-        } else {
-            res.status(400).json({ error: '영상을 찾을 수 없습니다.' });
-        }
-    } catch (err) {
-        res.status(500).json({ error: '서버 연결 실패' });
-    }
+    if (!data) return res.json({ success: false, error: '영상을 찾을 수 없습니다.' });
+
+    res.json({
+      success: true,
+      title: data.title,
+      cover: data.cover,
+      author: data.author.nickname || data.author.unique_id,
+      views: data.play_count,
+      likes: data.digg_count,
+      videoUrl: data.play // 워터마크 없는 영상 URL
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: '서버 에러가 발생했습니다.' });
+  }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 서버 실행 중: http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
