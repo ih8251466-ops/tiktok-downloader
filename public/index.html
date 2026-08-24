@@ -37,7 +37,6 @@
     .stats div { display: flex; align-items: center; gap: 6px; }
     
     .download-btn { display: block; width: 100%; text-align: center; background: #ff0050; color: #fff; text-decoration: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; }
-    .notice-text { font-size: 11px; color: #80808a; text-align: center; margin-top: 8px; }
     
     .loading { display: none; text-align: center; padding: 20px; color: #80808a; }
   </style>
@@ -78,8 +77,7 @@
           <div><i class="fa-solid fa-play"></i> <span id="views">0</span></div>
           <div><i class="fa-solid fa-heart"></i> <span id="likes">0</span></div>
         </div>
-        <a id="downloadLink" class="download-btn" href="" target="_blank" rel="noreferrer" download="tiktok_video.mp4"><i class="fa-solid fa-download"></i> 워터마크 없이 다운로드</a>
-        <p class="notice-text">※ 모바일에서 영상 재생 창이 열리면 화면을 길게 눌러 '비디오 저장'을 선택하세요.</p>
+        <a id="downloadLink" class="download-btn" href="" target="_blank"><i class="fa-solid fa-download"></i> 워터마크 없이 다운로드</a>
       </div>
     </div>
   </div>
@@ -167,8 +165,9 @@
       document.getElementById('views').innerText = Number(data.views).toLocaleString();
       document.getElementById('likes').innerText = Number(data.likes).toLocaleString();
       
-      const downloadLink = document.getElementById('downloadLink');
-      downloadLink.href = data.videoUrl;
+      // 내 백엔드 서버의 강제 다운로드 프록시 링크로 지정
+      const proxyDownloadUrl = `/download?url=${encodeURIComponent(data.videoUrl)}`;
+      document.getElementById('downloadLink').href = proxyDownloadUrl;
       
       document.getElementById('resultCard').style.display = 'block';
     }
