@@ -9,35 +9,40 @@ app.get('/api/download', async (req, res) => {
   const videoUrl = req.query.url;
   if (!videoUrl) return res.status(400).json({ error: 'URL이 필요합니다.' });
 
-  // 1차 시도: Lovelytik API
   try {
-    const api1 = await axios.get(`https://api.lovelytik.com/api/free/tiktok?url=${encodeURIComponent(videoUrl)}`, { timeout: 6000 });
-    if (api1.data && api1.data.status === 'success') {
-      const d = api1.data.data;
-      return res.json({
-        success: true,
-        title: d.title || 'TikTok Video',
-        cover: d.cover,
-        author: d.author || 'TikTok User',
-        views: d.play_count || 0,
-        likes: d.digg_count || 0,
-        videoUrl: d.nowatermark || d.play
-      });
-    }
-  } catch (err) {}
-
-  // 2차 시도: TikWM API 우회 헤더 적용
-  try {
-    const api2 = await axios.post('https://www.tikwm.com/api/', new URLSearchParams({ url: videoUrl }).toString(), {
+    // Cobalt 오픈소스 공용 엔드포인트 활용
+    const response = await axios.post('https://co.wuk.sh/api/json', {
+      url: videoUrl,
+      vCodec: 'h264',
+      isNoWatermark: true
+    }, {
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       },
-      timeout: 6000
+      timeout: 10000
     });
 
-    if (api2.data && api2.data.data) {
-      const d = api2.data.data;
+    if (response.data && response.data.url) {
+      return res.json({
+        success: true,
+        title: 'TikTok Video',
+        cover: '',
+        author: 'TikTok User',
+        views: 0,
+        likes: 0,
+        videoUrl: response.data.url
+      });
+    }
+  } catch (err) {
+    console.log('Cobalt API 시도 실패:', err.message);
+  }
+
+  // 대체 2차 API 시도
+  try {
+    const res2 = await axios.get(`https://api.v2.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}`, { timeout: 8000 });
+    if (res2.data && res2.data.data) {
+      const d = res2.data.data;
       return res.json({
         success: true,
         title: d.title || 'TikTok Video',
@@ -52,7 +57,7 @@ app.get('/api/download', async (req, res) => {
 
   res.json({
     success: false,
-    error: '외부 틱톡 API 서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해보시거나 링크를 다시 확인해주세요.'
+    error: '현재 틱톡 서버 보안 강화로 인해 추출이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.'
   });
 });
 
