@@ -69,28 +69,54 @@
       loading.style.display = 'block';
       resultCard.style.display = 'none';
 
+      // 1차 시도: Tikwm 공용 우회
       try {
-        const res = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
-        const data = await res.json();
-        
-        if (data.success) {
-          document.getElementById('cover').src = data.cover || '';
-          document.getElementById('author').innerText = data.author || 'TikTok User';
-          document.getElementById('title').innerText = data.title || 'TikTok Video';
-          document.getElementById('views').innerText = data.views ? Number(data.views).toLocaleString() : '0';
-          document.getElementById('likes').innerText = data.likes ? Number(data.likes).toLocaleString() : '0';
-          document.getElementById('downloadLink').href = data.videoUrl;
-          
-          resultCard.style.display = 'block';
-        } else {
-          alert(data.error || '영상을 가져올 수 없습니다.');
+        const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
+        const result = await res.json();
+        if (result && result.data && result.data.play) {
+          renderData({
+            cover: result.data.cover,
+            author: result.data.author?.nickname || 'TikTok User',
+            title: result.data.title || 'TikTok Video',
+            views: result.data.play_count || 0,
+            likes: result.data.digg_count || 0,
+            videoUrl: result.data.play
+          });
+          loading.style.display = 'none';
+          return;
         }
-      } catch (err) {
-        console.error(err);
-        alert('서버 응답 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-      } finally {
-        loading.style.display = 'none';
-      }
+      } catch (e) {}
+
+      // 2차 시도: Lovelytik 백업 API
+      try {
+        const res2 = await fetch(`https://api.lovelytik.com/api/free/tiktok?url=${encodeURIComponent(url)}`);
+        const result2 = await res2.json();
+        if (result2 && result2.status === 'success' && result2.data) {
+          renderData({
+            cover: result2.data.cover,
+            author: result2.data.author || 'TikTok User',
+            title: result2.data.title || 'TikTok Video',
+            views: result2.data.play_count || 0,
+            likes: result2.data.digg_count || 0,
+            videoUrl: result2.data.nowatermark || result2.data.play
+          });
+          loading.style.display = 'none';
+          return;
+        }
+      } catch (e) {}
+
+      loading.style.display = 'none';
+      alert('영상 추출에 실패했습니다. 틱톡 링크 주소가 올바른지 확인해주세요.');
+    }
+
+    function renderData(data) {
+      document.getElementById('cover').src = data.cover || '';
+      document.getElementById('author').innerText = data.author;
+      document.getElementById('title').innerText = data.title;
+      document.getElementById('views').innerText = Number(data.views).toLocaleString();
+      document.getElementById('likes').innerText = Number(data.likes).toLocaleString();
+      document.getElementById('downloadLink').href = data.videoUrl;
+      document.getElementById('resultCard').style.display = 'block';
     }
   </script>
 </body>
