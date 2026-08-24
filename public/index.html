@@ -36,9 +36,8 @@
     .stats { display: flex; gap: 16px; font-size: 13px; color: #80808a; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #2d2d35; }
     .stats div { display: flex; align-items: center; gap: 6px; }
     
-    /* 실제 클릭하는 버튼 디자인 */
-    .download-link-btn { display: block; width: 100%; text-align: center; background: #ff0050; color: #fff; text-decoration: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; }
-    .download-link-btn:disabled { background: #444; color: #888; cursor: not-allowed; }
+    .download-btn { display: block; width: 100%; text-align: center; background: #ff0050; color: #fff; text-decoration: none; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; }
+    .notice-text { font-size: 11px; color: #80808a; text-align: center; margin-top: 8px; }
     
     .loading { display: none; text-align: center; padding: 20px; color: #80808a; }
   </style>
@@ -79,15 +78,14 @@
           <div><i class="fa-solid fa-play"></i> <span id="views">0</span></div>
           <div><i class="fa-solid fa-heart"></i> <span id="likes">0</span></div>
         </div>
-        <!-- 실제 클릭하는 버튼 -->
-        <button id="downloadBtn" class="download-link-btn" onclick="forceDownload()"><i class="fa-solid fa-download"></i> 워터마크 없이 다운로드</button>
+        <a id="downloadLink" class="download-btn" href="" target="_blank" rel="noreferrer" download="tiktok_video.mp4"><i class="fa-solid fa-download"></i> 워터마크 없이 다운로드</a>
+        <p class="notice-text">※ 모바일에서 영상 재생 창이 열리면 화면을 길게 눌러 '비디오 저장'을 선택하세요.</p>
       </div>
     </div>
   </div>
 
   <script>
     let currentTab = 'tiktok';
-    let currentVideoUrl = ''; // 현재 추출된 원본 영상 링크 저장
 
     function switchTab(tab) {
       currentTab = tab;
@@ -123,9 +121,7 @@
 
       loading.style.display = 'block';
       resultCard.style.display = 'none';
-      currentVideoUrl = ''; // 기존 URL 초기화
 
-      // 틱톡 1차 시도
       try {
         const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
         const result = await res.json();
@@ -143,7 +139,6 @@
         }
       } catch (e) {}
 
-      // 틱톡 2차 시도
       try {
         const res2 = await fetch(`https://api.lovelytik.com/api/free/tiktok?url=${encodeURIComponent(url)}`);
         const result2 = await res2.json();
@@ -172,53 +167,10 @@
       document.getElementById('views').innerText = Number(data.views).toLocaleString();
       document.getElementById('likes').innerText = Number(data.likes).toLocaleString();
       
-      // 원본 URL 저장 및 다운로드 버튼 상태 초기화
-      currentVideoUrl = data.videoUrl;
-      const downloadBtn = document.getElementById('downloadBtn');
-      downloadBtn.innerHTML = '<i class="fa-solid fa-download"></i> 워터마크 없이 다운로드';
-      downloadBtn.disabled = false;
+      const downloadLink = document.getElementById('downloadLink');
+      downloadLink.href = data.videoUrl;
       
       document.getElementById('resultCard').style.display = 'block';
-    }
-
-    // 모바일 무조건 다운로드 우회 로직
-    async function forceDownload() {
-      if (!currentVideoUrl) return;
-
-      const downloadBtn = document.getElementById('downloadBtn');
-      const originalText = downloadBtn.innerHTML;
-      downloadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 다운로드 준비 중...';
-      downloadBtn.disabled = true;
-
-      try {
-        // CORS 우회 프록시를 통해 영상 데이터를 Blob으로 직접 가져옴
-        const corsUrl = `https://corsproxy.io/?${encodeURIComponent(currentVideoUrl)}`;
-        const response = await fetch(corsUrl);
-        const blob = await response.blob();
-        
-        // 브라우저 내부에서만 유효한 임시 URL 생성
-        const blobUrl = window.URL.createObjectURL(blob);
-        
-        // 보이지 않는 가짜 <a> 태그 생성 및 클릭
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = blobUrl;
-        a.download = `tiktok_video_${Date.now()}.mp4`; // 다운로드 파일명 지정
-        document.body.appendChild(a);
-        a.click();
-        
-        // 메모리 해제
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(blobUrl);
-
-      } catch (err) {
-        console.error(err);
-        alert('모바일 직접 다운로드에 실패했습니다. 영상이 재생되면 화면을 길게 눌러 다운로드해 주세요.');
-      }
-
-      // 버튼 상태 복구
-      downloadBtn.innerHTML = originalText;
-      downloadBtn.disabled = false;
     }
   </script>
 </body>
