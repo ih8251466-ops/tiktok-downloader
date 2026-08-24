@@ -70,26 +70,24 @@
       resultCard.style.display = 'none';
 
       try {
-        // 브라우저에서 외부 API를 직접 호출 (차단 우회)
-        const res = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`);
-        const result = await res.json();
+        const res = await fetch(`/api/download?url=${encodeURIComponent(url)}`);
+        const data = await res.json();
         
-        if (result && result.data) {
-          const data = result.data;
+        if (data.success) {
           document.getElementById('cover').src = data.cover || '';
-          document.getElementById('author').innerText = data.author?.nickname || 'TikTok User';
+          document.getElementById('author').innerText = data.author || 'TikTok User';
           document.getElementById('title').innerText = data.title || 'TikTok Video';
-          document.getElementById('views').innerText = data.play_count ? Number(data.play_count).toLocaleString() : '0';
-          document.getElementById('likes').innerText = data.digg_count ? Number(data.digg_count).toLocaleString() : '0';
-          document.getElementById('downloadLink').href = data.play;
+          document.getElementById('views').innerText = data.views ? Number(data.views).toLocaleString() : '0';
+          document.getElementById('likes').innerText = data.likes ? Number(data.likes).toLocaleString() : '0';
+          document.getElementById('downloadLink').href = data.videoUrl;
           
           resultCard.style.display = 'block';
         } else {
-          alert('영상을 가져올 수 없습니다. 틱톡 링크를 다시 확인해주세요.');
+          alert(data.error || '영상을 가져올 수 없습니다.');
         }
       } catch (err) {
         console.error(err);
-        alert('영상 정보를 추출하는 데 실패했습니다.');
+        alert('서버 응답 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       } finally {
         loading.style.display = 'none';
       }
